@@ -124,7 +124,7 @@
   }
 
   function cargarCatalogo() {
-    fetch("https://script.google.com/macros/s/AKfycbwOz_hUq0xRZmTel05NglgrK0rLX4W_U987q7eQ-aTV4s6Bt_87erQ4ccSaJTlmzPnv/exec")
+    fetch("https://script.google.com/macros/s/AKfycbwY5TFocek-mo2wHTNGDp8LF_1uGKZvS6Ear6kPErZFz8R2Fl9MuDKx885b_RFufvWI/exec")
       .then(r => r.json())
       .then(regalos => {
         const cont = document.getElementById("lista");
@@ -156,7 +156,7 @@
   document.getElementById('confirm-btn').onclick = () => {
     if (!seleccion) return;
 
-    fetch("https://script.google.com/macros/s/AKfycbwOz_hUq0xRZmTel05NglgrK0rLX4W_U987q7eQ-aTV4s6Bt_87erQ4ccSaJTlmzPnv/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbwY5TFocek-mo2wHTNGDp8LF_1uGKZvS6Ear6kPErZFz8R2Fl9MuDKx885b_RFufvWI/exec", {
       method: "POST",
       body: new URLSearchParams({
         regalo: seleccion,
@@ -177,5 +177,6 @@
 </script>
 </body>
 </html>
+
 
 
