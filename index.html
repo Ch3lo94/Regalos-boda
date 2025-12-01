@@ -51,7 +51,7 @@ body {
   border:3px solid transparent;
   transition:.25s ease;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  position: relative; /* Necesario para posicionar el botón de agotado */
+  position: relative; /* Esencial para el overlay */
 }
 
 .card:not(.agotado):hover {
@@ -73,7 +73,7 @@ body {
 
 .card-content { padding:16px; }
 
-/* Nuevo estilo para el botón de Agotado/Ya Elegido */
+/* --- ESTILOS PARA EL INDICADOR DE AGOTADO/YA ELEGIDO --- */
 .agotado-overlay {
   position: absolute;
   top: 0;
@@ -84,7 +84,15 @@ body {
   justify-content: center;
   align-items: center;
   background: rgba(255, 255, 255, 0.7);
-  z-index: 10;
+  z-index: 5;
+  visibility: hidden; /* Oculto por defecto */
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+.card.agotado .agotado-overlay {
+  visibility: visible; /* Mostrar si está agotado */
+  opacity: 1;
 }
 
 .agotado-btn {
@@ -96,16 +104,13 @@ body {
   font-size: 14px;
   text-align: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  text-transform: uppercase;
 }
+/* --- FIN ESTILOS INDICADOR --- */
 
 .card:not(.selected).agotado {
-  opacity: 0.6; /* Solo aplica opacidad si no está seleccionado */
+  opacity: 0.6; /* Solo aplica opacidad si NO está seleccionado */
   pointer-events: none; /* Deshabilita el click si no está seleccionado y está agotado */
-}
-
-/* El botón de agotado se muestra solo en tarjetas agotadas */
-.card:not(.agotado) .agotado-overlay {
-  display: none;
 }
 
 
@@ -216,8 +221,6 @@ async function handleCredentialResponse(response) {
     email: payload.email.trim().toLowerCase()
   };
 
-  // No es necesario comprobar el localStorage aquí, el servidor lo comprueba
-  // pero lo mantengo por si acaso.
   if (localStorage.getItem("respondio_" + usuario.email)) {
     mostrarMensajeFinal();
     return;
@@ -232,7 +235,7 @@ async function handleCredentialResponse(response) {
     return;
   }
   
-  // Cargar las selecciones previas si existen (aunque el servidor lo borre)
+  // Cargar las selecciones previas (en caso de que el backend las devuelva)
   if (result.seleccionPrevia && Array.isArray(result.seleccionPrevia)) {
     seleccion = result.seleccionPrevia;
   }
@@ -257,17 +260,19 @@ async function cargarCatalogo() {
     let agotadoTexto = '';
     if (item.stockRestante <= 0) {
       card.classList.add("agotado");
-      agotadoTexto = 'Ya Elegido';
+      agotadoTexto = 'Ya Elegido'; 
     }
 
-    // Comprobar si fue seleccionado en una sesión anterior (si el backend lo devuelve)
+    // Comprobar si fue seleccionado por el usuario o si ya está agotado y se registró antes
     if (seleccion.includes(item.id)) {
       card.classList.add("selected");
+      // Si un ítem ya fue elegido (por mí o por otro) se mantiene el texto 'Ya Elegido'
+      if (item.stockRestante <= 0) agotadoTexto = 'Ya Elegido';
     }
 
     card.innerHTML = `
       <img src="${item.imagen}">
-      <div class="agotado-overlay">
+            <div class="agotado-overlay">
         <span class="agotado-btn">${agotadoTexto}</span>
       </div>
       <div class="card-content">
@@ -280,15 +285,14 @@ async function cargarCatalogo() {
     grid.appendChild(card);
   });
   
-  // Actualizar el estado inicial del botón de confirmar
+  // Habilitar el botón si ya hay elementos en la selección inicial
   document.getElementById("confirm-btn").disabled = seleccion.length === 0;
 }
 
 // Selección
 function toggle(id, card) {
-  // Evita deseleccionar si el ítem está agotado, así mantiene el borde dorado
-  if (card.classList.contains('agotado') && seleccion.includes(id)) {
-    // Si está agotado y seleccionado, no hace nada al clickear.
+  // Si el ítem está agotado, no permitimos cambiar el estado (ni seleccionar ni deseleccionar)
+  if (card.classList.contains('agotado')) {
     return;
   }
 
@@ -296,24 +300,14 @@ function toggle(id, card) {
     seleccion = seleccion.filter(x => x !== id);
     card.classList.remove("selected");
   } else {
-    // Si el ítem no está agotado, permite la selección
-    if (!card.classList.contains('agotado')) {
-      seleccion.push(id);
-      card.classList.add("selected");
-    }
+    seleccion.push(id);
+    card.classList.add("selected");
   }
   document.getElementById("confirm-btn").disabled = seleccion.length === 0;
 }
 
 // Confirmar selección
 document.getElementById("confirm-btn").onclick = async () => {
-  // Filtra elementos que ya están agotados y que no fueron seleccionados originalmente por el usuario
-  // Esto es una precaución, ya que la lógica de toggle ya debería prevenir esto.
-  // Lo ideal es enviar solo lo que el usuario puede elegir (no agotados).
-  
-  // Filtramos solo las selecciones que tienen stock > 0 si el backend lo permite
-  // Dado que el front-end no tiene el stock, enviamos toda la selección y dejamos que el backend valide.
-  
   // Deshabilitamos el botón para evitar múltiples envíos
   document.getElementById("confirm-btn").disabled = true;
 
